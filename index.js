@@ -2,6 +2,8 @@
 import express from 'express';
 import 'dotenv/config'; // 載入環境變數檔內容到 process.env
 import multer from 'multer';
+import cookieParser from 'cookie-parser';
+import session from 'express-session';
 import upload from './utils/upload-images.js';
 import adminRouter from './routes/admin.js';
 import memberRouter from './routes/member.js';
@@ -20,6 +22,22 @@ app.set('query parser', 'extended');
 app.use(express.urlencoded({ extended: true }));
 // 全域中介軟體：解析 application/json
 app.use(express.json());
+// 全域中介軟體：解析 cookies
+app.use(cookieParser());
+// 全域中介軟體：session（預設使用記憶體儲存，第十六單元改存資料庫）
+app.use(
+  session({
+    // 新用戶若未使用到 session 就不建立、不發送 cookie，避免每個訪客都產生 session
+    saveUninitialized: false,
+    // 沒有變更時不強制回存，可降低 store 寫入次數
+    resave: false,
+    // 用來簽署 session id，正式環境應改用環境變數
+    secret: process.env.SESSION_SECRET || '雜湊 session id 的字串',
+    // cookie: {
+    //   maxAge: 1200_000, // 20 分鐘，單位毫秒
+    // },
+  })
+);
 
 // 自訂中介軟體：記錄每個請求
 const requestLogger = (req, res, next) => {
@@ -151,6 +169,38 @@ app.get(['/params-2', '/params-2/:action', '/params-2/:action/:id'], (req, res) 
 // 路徑中固定段與參數可混用
 app.get('/users/:userId/profile', (req, res) => {
   res.json(req.params);
+});
+
+// Cookie：設定 cookie
+app.get('/my-set-cookie', (req, res) => {
+  // 基本設定
+  res.cookie('username', 'shinder'); // 不設定過期時間，瀏覽器關閉時刪除
+
+  // 完整選項設定
+  res.cookie('userToken', 'secure-token-123', {
+    maxAge: 2 * 60 * 60 * 1000, // 2小時後過期
+    httpOnly: true, // 防止 XSS 攻擊
+    // secure: process.env.NODE_ENV === 'production', // 生產環境使用 HTTPS
+    sameSite: 'strict', // 防止 CSRF 攻擊
+    path: '/', // 整個網站都可存取
+  });
+
+  res.send('Cookie 已設定');
+});
+
+// Cookie：讀取 cookie
+app.get('/my-get-cookie', (req, res) => {
+  const username = req.cookies.username || '訪客';
+  const userToken = req.cookies.userToken || '無效的 Token';
+  res.json({ username, userToken });
+});
+
+// Session：每次造訪累加 my_num
+app.get('/try-sess', (req, res) => {
+  // 如果 my_num 不存在，先設為 0；接著遞增
+  req.session.my_num ||= 0;
+  req.session.my_num++;
+  res.json(req.session);
 });
 
 // 前端發送表單資料的三種格式：用同一端點接收
