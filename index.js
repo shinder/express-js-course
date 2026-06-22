@@ -130,6 +130,27 @@ app.post('/try-uploads', upload.array('photos'), (req, res) => {
   res.json(req.files);
 });
 
+// 動態路由：URL 路徑中以 : 開頭的部分會塞進 req.params
+// 造訪 /users/123 → req.params.id = "123"
+app.get('/users/:id', (req, res) => {
+  res.send(`User ID: ${req.params.id}`);
+});
+
+// 多個參數：/params-1/edit/42 → { action: "edit", id: "42" }
+app.get('/params-1/:action/:id', (req, res) => {
+  res.json(req.params);
+});
+
+// 一個處理函式對應多個路徑（陣列）
+app.get(['/params-2', '/params-2/:action', '/params-2/:action/:id'], (req, res) => {
+  res.json(req.params);
+});
+
+// 路徑中固定段與參數可混用
+app.get('/users/:userId/profile', (req, res) => {
+  res.json(req.params);
+});
+
 // 設定靜態檔案服務（放在其他路由之後、404 之前）
 app.use(express.static('public'));
 
