@@ -8,6 +8,10 @@ const port = process.env.PORT || 3000;
 // 設定 EJS 為模板引擎（模板檔預設放在 ./views）
 app.set('view engine', 'ejs');
 
+// Express 5 預設的 query parser 為 simple（不支援巢狀物件）；
+// 設為 extended 以改用 qs 套件解析，支援 user[name]=Amy 這類巢狀語法
+app.set('query parser', 'extended');
+
 // 基本路由
 app.get('/', (req, res) => {
   res.render('home', { name: 'Shinder' });
@@ -33,6 +37,46 @@ app.get('/api/info', (req, res) => {
     name: 'My Express App',
     version: '1.0.0',
     timestamp: new Date().toISOString(),
+  });
+});
+
+// Query String：參數會被解析後放到 req.query（Object 型別）
+app.get('/try-qs', (req, res) => {
+  res.json(req.query);
+});
+
+// Query String 驗證與預設值
+app.get('/api/products', (req, res) => {
+  // 取得參數並設定預設值
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const sortBy = req.query.sortBy || 'name';
+  const order = req.query.order === 'desc' ? 'desc' : 'asc';
+
+  // 驗證參數
+  if (page < 1) {
+    return res.status(400).json({ error: '頁數必須大於 0' });
+  }
+
+  if (limit < 1 || limit > 100) {
+    return res.status(400).json({ error: '每頁數量必須在 1-100 之間' });
+  }
+
+  const validSortFields = ['name', 'price', 'category'];
+  if (!validSortFields.includes(sortBy)) {
+    return res.status(400).json({ error: '無效的排序欄位' });
+  }
+
+  // 模擬分頁處理
+  const startIndex = (page - 1) * limit;
+  const endIndex = startIndex + limit;
+
+  res.json({
+    page: page,
+    limit: limit,
+    sortBy: sortBy,
+    order: order,
+    message: `第 ${page} 頁，每頁 ${limit} 項，按 ${sortBy} ${order} 排序`,
   });
 });
 
