@@ -1,0 +1,170 @@
+<%- include('../partials/html-head') %>
+<%- include('../partials/html-navbar') %>
+<div class="d-flex align-items-start justify-content-center bg-light px-3 py-5">
+  <div class="card w-100 shadow" style="max-width: 32rem;">
+    <div class="card-body">
+      <h2 class="card-title text-center fs-4 fw-bold mb-4">編輯通訊錄</h2>
+
+      <form name="form1" onsubmit="sendData(event)" novalidate>
+        <!-- 編號欄位 (唯讀) -->
+        <div class="mb-3">
+          <label class="form-label">編號</label>
+          <input type="text" class="form-control"
+                 value="<%= ab_id %>" disabled />
+        </div>
+
+        <!-- 姓名欄位 -->
+        <div class="mb-3">
+          <label class="form-label" for="name">姓名</label>
+          <input type="text" class="form-control"
+                 id="name" name="name" value="<%= name %>"
+                 placeholder="請輸入姓名" />
+          <div class="invalid-feedback"></div>
+        </div>
+
+        <!-- 電子郵箱欄位 -->
+        <div class="mb-3">
+          <label class="form-label" for="email">電子郵箱</label>
+          <input type="email" class="form-control"
+                 id="email" name="email" value="<%= email %>"
+                 placeholder="請輸入電子郵箱" />
+          <div class="invalid-feedback"></div>
+        </div>
+
+        <!-- 手機欄位 -->
+        <div class="mb-3">
+          <label class="form-label" for="mobile">手機</label>
+          <input type="tel" class="form-control"
+                 id="mobile" name="mobile" value="<%= mobile %>"
+                 placeholder="請輸入手機號碼" />
+          <div class="invalid-feedback"></div>
+        </div>
+
+        <!-- 生日欄位 -->
+        <div class="mb-3">
+          <label class="form-label" for="birthday">生日</label>
+          <input type="date" class="form-control"
+                 id="birthday" name="birthday" value="<%= birthday %>" />
+          <div class="invalid-feedback"></div>
+        </div>
+
+        <!-- 地址欄位 -->
+        <div class="mb-4">
+          <label class="form-label" for="address">地址</label>
+          <textarea class="form-control"
+                    id="address" name="address"
+                    placeholder="請輸入地址" rows="3"><%= address %></textarea>
+        </div>
+
+        <!-- 提交按鈕 -->
+        <div class="d-grid">
+          <button type="submit" class="btn btn-primary">修改</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div id="resultModal" class="modal fade" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">編輯結果</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <!-- 成功提示 -->
+        <div class="alert alert-success modal-success" style="display: none;">
+          資料編輯成功
+        </div>
+
+        <!-- 警告提示 -->
+        <div class="alert alert-warning modal-warning" style="display: none;">
+          資料沒有修改
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">繼續編輯</button>
+        <button type="button" class="btn btn-primary"
+                onclick="location.href= document.referrer ? document.referrer : '/address-book'">
+          回列表頁
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/html-scripts') %>
+<script>
+  const ab_id = <%- ab_id %>;
+  const modalEl = document.getElementById('resultModal');
+  const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+  const nameField = document.form1.name;
+  const emailField = document.form1.email;
+
+  // Email 驗證函式
+  function validateEmail(email) {
+    const re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    return re.test(email);
+  }
+
+  // 清除錯誤狀態
+  function clearErrors() {
+    document.querySelectorAll('.form-control').forEach(field => {
+      field.classList.remove('is-invalid');
+    });
+    document.querySelectorAll('.invalid-feedback').forEach(text => {
+      text.innerHTML = '';
+    });
+  }
+
+  // 表單提交處理
+  const sendData = async e => {
+    e.preventDefault();
+    // 清除之前的錯誤狀態
+    clearErrors();
+    let isPass = true;
+    // 表單驗證可以在這裡加入
+    if (!isPass) {
+      return;
+    }
+    const fd = new FormData(document.form1);
+    try {
+      const obj = await apiRequest(`/address-book/api/${ab_id}`, {
+        method: 'PUT',
+        body: fd,
+      }, '編輯聯絡人');
+
+      const successAlert = modalEl.querySelector('.alert-success');
+      const warningAlert = modalEl.querySelector('.alert-warning');
+
+      if (obj.success) {
+        // 編輯成功
+        successAlert.style.display = 'block';
+        warningAlert.style.display = 'none';
+        modal.show();
+      } else {
+        if (obj.issues?.length) {
+          // 處理驗證錯誤
+          obj.issues.forEach((issue) => {
+            const name = issue.path[0];
+            const msg = issue.message;
+            const field = document.form1[name];
+            const errorText = field.nextElementSibling;
+            errorText.innerHTML = msg;
+            field.classList.add('is-invalid');
+          });
+        } else {
+          // 沒有修改任何資料
+          successAlert.style.display = 'none';
+          warningAlert.style.display = 'block';
+          modal.show();
+        }
+      }
+    } catch (error) {
+      // 錯誤已由 apiRequest 處理
+    }
+  }
+</script>
+<%- include('../partials/html-tail') %>

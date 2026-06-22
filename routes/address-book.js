@@ -132,24 +132,31 @@ const getListData = async (req) => {
 
 // 取得單筆資料
 const getItemData = async (req) => {
-  const output = { success: false, code: 0, data: {} };
+  const output = {
+    success: false,
+    data: {},
+    code: 0,
+    message: "",
+  };
+
   const ab_id = +req.params.ab_id || 0;
   if (!ab_id) {
-    output.code = 400;
-    return output;
+    return { ...output, code: 400, message: "錯誤的編號" };
   }
-  const [rows] = await pool.query("SELECT * FROM address_book WHERE ab_id=?", [ab_id]);
-  if (!rows.length) {
-    output.code = 404;
-    return output;
+
+  // 讀取資料
+  const sql = "SELECT * FROM address_book WHERE ab_id=?";
+  const [rows] = await pool.query(sql, [ab_id]);
+
+  if (rows.length === 0) {
+    return { ...output, code: 404, message: "沒有該筆資料" };
   }
-  const row = rows[0];
-  const m = moment(row.birthday);
-  row.birthday = m.isValid() ? m.format("YYYY-MM-DD") : "";
-  output.data = row;
-  output.success = true;
-  output.code = 200;
-  return output;
+
+  // 格式化生日欄位
+  const m = moment(rows[0].birthday);
+  rows[0].birthday = m.isValid() ? m.format("YYYY-MM-DD") : "";
+
+  return { ...output, code: 200, success: true, data: rows[0] };
 };
 
 // 列表頁面
@@ -177,6 +184,19 @@ router.get("/add", async (req, res) => {
   res.locals.pageTitle = "新增通訊錄";
   res.locals.pageName = "ab-add";
   res.render("address-book/add");
+});
+
+// 修改資料的表單頁
+router.get("/edit/:ab_id", async (req, res) => {
+  res.locals.pageTitle = "編輯通訊錄";
+  res.locals.pageName = "ab-edit";
+
+  const item = await getItemData(req);
+  if (!item.success) {
+    return res.redirect("/address-book"); // 沒取到資料，回列表頁
+  }
+
+  res.render("address-book/edit", item.data);
 });
 
 // 列表資料 API
@@ -271,6 +291,104 @@ router.post("/api", upload.none(), async (req, res) => {
   }
 
   res.json(output);
+});
+
+// 修改資料
+router.put("/api/:ab_id", upload.none(), async (req, res) => {
+  const output = {
+    success: false,
+    bodyData: req.body,
+    issues: [],
+  };
+
+  // 取得未修改前的資料
+  const ori = await getItemData(req);
+  if (!ori.success) {
+    return res.status(404).json(output);
+  }
+
+  const ab_id = ori.data.ab_id;
+  let { name, email, mobile, birthday, address } = req.body;
+
+  // 資料驗證
+  const zodResult = abItemSchema.safeParse({
+    name,
+    email,
+    mobile,
+    birthday,
+    address,
+  });
+
+  if (!zodResult.success) {
+    if (zodResult.error?.issues?.length) {
+      output.issues = zodResult.error.issues;
+    }
+    return res.status(400).json(output);
+  }
+
+  // 處理空值的生日欄位
+  if (!birthday) {
+    birthday = null;
+  }
+
+  const sql = "UPDATE `address_book` SET ? WHERE ab_id=?";
+
+  try {
+    const [result] = await pool.query(sql, [
+      { name, email, mobile, birthday, address },
+      ab_id,
+    ]);
+
+    // 使用 changedRows 判斷是否真的有修改
+    output.success = !!result.changedRows;
+
+    if (output.success) {
+      res.status(200);
+    }
+  } catch (ex) {
+    console.log(ex);
+    res.status(400);
+  }
+
+  res.json(output);
+});
+
+// 批次刪除（須定義在 /api/:ab_id 之前，否則 del_many 會被當成 ab_id）
+router.delete("/api/del_many", upload.none(), async (req, res) => {
+  const output = {
+    success: false,
+    affectedRows: 0,
+  };
+
+  // 檢查參數
+  if (!req.body.i || !req.body.i.length) {
+    return res.status(400).json(output);
+  }
+
+  // 防範 SQL injection
+  const items = req.body.i.map((item) => pool.escape(item));
+
+  const sql = `DELETE FROM address_book WHERE ab_id IN (${items.join(",")})`;
+  const [result] = await pool.query(sql);
+
+  output.affectedRows = result.affectedRows;
+  output.success = !!result.affectedRows;
+
+  res.json(output);
+});
+
+// 刪除單筆資料
+router.delete("/api/:ab_id", async (req, res) => {
+  const ori = await getItemData(req); // 取得未修改前的資料
+
+  if (!ori.success) {
+    return res.status(404).json({ success: false });
+  }
+
+  const sql = "DELETE FROM address_book WHERE ab_id=?";
+  const [result] = await pool.query(sql, [ori.data.ab_id]);
+
+  res.json({ success: !!result.affectedRows });
 });
 
 // 單筆資料 API
