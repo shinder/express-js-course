@@ -4,6 +4,7 @@ import 'dotenv/config'; // 載入環境變數檔內容到 process.env
 import multer from 'multer';
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
+import MySQLStore from 'express-mysql-session';
 import moment from 'moment-timezone';
 import pool from './utils/connect-mysql.js';
 import upload from './utils/upload-images.js';
@@ -26,7 +27,12 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 // 全域中介軟體：解析 cookies
 app.use(cookieParser());
-// 全域中介軟體：session（預設使用記憶體儲存，第十六單元改存資料庫）
+
+// 建立 Session Store：將 session 儲存到 MySQL（取代預設的記憶體儲存）
+const MySQLStoreClass = MySQLStore(session);
+const sessionStore = new MySQLStoreClass({}, pool);
+
+// 全域中介軟體：session
 app.use(
   session({
     // 新用戶若未使用到 session 就不建立、不發送 cookie，避免每個訪客都產生 session
@@ -35,6 +41,7 @@ app.use(
     resave: false,
     // 用來簽署 session id，正式環境應改用環境變數
     secret: process.env.SESSION_SECRET || '雜湊 session id 的字串',
+    store: sessionStore, // 使用 MySQL 作為 session 儲存媒體
     // cookie: {
     //   maxAge: 1200_000, // 20 分鐘，單位毫秒
     // },
