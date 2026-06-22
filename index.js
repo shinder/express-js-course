@@ -3,6 +3,8 @@ import express from 'express';
 import 'dotenv/config'; // 載入環境變數檔內容到 process.env
 import multer from 'multer';
 import upload from './utils/upload-images.js';
+import adminRouter from './routes/admin.js';
+import memberRouter from './routes/member.js';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -150,6 +152,11 @@ app.get(['/params-2', '/params-2/:action', '/params-2/:action/:id'], (req, res) 
 app.get('/users/:userId/profile', (req, res) => {
   res.json(req.params);
 });
+
+// 路由模組化：掛載 router（當成中介軟體使用，放在 404 之前）
+app.use(adminRouter); // 無前綴：/admin/123
+app.use('/v1', adminRouter); // 有前綴：/v1/admin/123，req.baseUrl = /v1
+app.use(memberRouter); // router.route() 寫法：/member/edit/:id
 
 // 設定靜態檔案服務（放在其他路由之後、404 之前）
 app.use(express.static('public'));
