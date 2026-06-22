@@ -1,0 +1,5 @@
+{
+  "name": "cjs-demo",
+  "type": "commonjs",
+  "private": true
+}
