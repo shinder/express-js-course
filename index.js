@@ -5,17 +5,26 @@ import 'dotenv/config'; // 載入環境變數檔內容到 process.env
 const app = express();
 const port = process.env.PORT || 3000;
 
+// 設定 EJS 為模板引擎（模板檔預設放在 ./views）
+app.set('view engine', 'ejs');
+
 // 基本路由
 app.get('/', (req, res) => {
-  res.send(`
-    <h1>歡迎來到 Express 應用程式</h1>
-    <p>使用 ES Modules (ESM) 語法</p>
-    <p>目前時間：${new Date().toLocaleString('zh-TW')}</p>
-  `);
+  res.render('home', { name: 'Shinder' });
 });
 
 app.get('/about', (req, res) => {
   res.send('<h1>關於我們</h1><p>這是使用 Express 和 ESM 的範例。</p>');
+});
+
+// 以表格呈現陣列裡的資料
+app.get('/sales-array', (req, res) => {
+  const sales = [
+    { name: 'Bill', age: 28, id: 'A001' },
+    { name: 'Peter', age: 32, id: 'A002' },
+    { name: 'Carl', age: 29, id: 'A003' },
+  ];
+  res.render('sales-array', { sales });
 });
 
 // JSON API 路由
