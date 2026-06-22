@@ -6,6 +6,7 @@ import cookieParser from 'cookie-parser';
 import session from 'express-session';
 import MySQLStore from 'express-mysql-session';
 import moment from 'moment-timezone';
+import { z } from 'zod';
 import pool from './utils/connect-mysql.js';
 import upload from './utils/upload-images.js';
 import adminRouter from './routes/admin.js';
@@ -21,6 +22,13 @@ app.set('view engine', 'ejs');
 // Express 5 預設的 query parser 為 simple（不支援巢狀物件）；
 // 設為 extended 以改用 qs 套件解析，支援 user[name]=Amy 這類巢狀語法
 app.set('query parser', 'extended');
+
+// 登入用的資料驗證 schema（Zod）：email 須為電郵格式、密碼至少 6 碼
+// 單元十九補充：定義 schema → safeParse 解析 → 處理 issues；供單元二十一登入使用
+const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6),
+});
 
 // 全域中介軟體：處理 URL-encoded 表單資料（HTML form 預設格式）
 app.use(express.urlencoded({ extended: true }));
