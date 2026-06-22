@@ -5,6 +5,7 @@ import multer from 'multer';
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
 import moment from 'moment-timezone';
+import pool from './utils/connect-mysql.js';
 import upload from './utils/upload-images.js';
 import adminRouter from './routes/admin.js';
 import memberRouter from './routes/member.js';
@@ -170,6 +171,28 @@ app.get(['/params-2', '/params-2/:action', '/params-2/:action/:id'], (req, res) 
 // 路徑中固定段與參數可混用
 app.get('/users/:userId/profile', (req, res) => {
   res.json(req.params);
+});
+
+// 讀取資料表
+app.get('/try-db', async (req, res) => {
+  const sql = 'SELECT * FROM address_book LIMIT 3';
+
+  // 第一個值為查詢的結果，第二個值為資料表欄位定義的相關資料
+  const [rows, fields] = await pool.query(sql);
+  res.json(rows);
+});
+
+// 新增資料（? 為佔位字元，可防止 SQL 注入）
+app.get('/try-db2', async (req, res) => {
+  const sql = `INSERT INTO address_book
+    (name, email, mobile, address) VALUES (?, ?, ?, ?);`;
+  const [result] = await pool.query(sql, [
+    '小新',
+    'shinder@test.com',
+    '0912345678',
+    '台北市信義區',
+  ]);
+  res.json(result);
 });
 
 // 時間格式：使用 Moment.js（含時區）
