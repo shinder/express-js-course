@@ -27,7 +27,6 @@
     "express": "^5.2.1",
     "express-mysql-session": "^3.0.3",
     "express-session": "^1.19.0",
-    "jsonwebtoken": "^9.0.3",
     "moment-timezone": "^0.6.2",
     "multer": "^2.2.0",
     "mysql2": "^3.22.5",

@@ -22,10 +22,9 @@ const abItemSchema = z.object({
     .or(z.literal("")),
 });
 
-// 取得目前登入會員的 id（支援 Session 與 JWT，未登入則為 0）
+// 取得目前登入會員的 id（未登入則為 0）
 const getMemberId = (req) => {
   if (req.session.admin?.id) return +req.session.admin.id;
-  if (req.my_jwt?.id) return +req.my_jwt.id;
   return 0;
 };
 
@@ -209,7 +208,7 @@ router.get("/api", async (req, res) => {
   res.json(data);
 });
 
-// 切換收藏狀態（需登入，支援 Session 與 JWT）
+// 切換收藏狀態（需登入）
 router.post("/api/toggle-like/:ab_id", async (req, res) => {
   let output = {
     success: false,

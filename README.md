@@ -91,12 +91,12 @@ pnpm start   # 一般啟動
 | 十四 | 時間格式 Moment.js | `index.js`（/try-moment） |
 | 十五 | 連線 MySQL | `utils/connect-mysql.js` |
 | 十六 | Session 入庫 | `index.js`（express-mysql-session） |
-| 十七～二十一 | 通訊錄 CRUD、Zod 驗證、登入權限、JWT | `routes/address-book.js`、`views/address-book/`、`index.js` |
+| 十七～二十一 | 通訊錄 CRUD、Zod 驗證、登入與權限管控 | `routes/address-book.js`、`views/address-book/`、`index.js` |
 | 附錄二 | CORS | `demo/cors/` |
 
 ## API 文件（Swagger / OpenAPI）
 
-本專案的 JSON API（`/address-book/api/*`、`/login`、`/login-jwt`、`/jwt-data` 等）可用 Swagger 產生互動式文件。在 Node/Express 常見三種作法：
+本專案的 JSON API（`/address-book/api/*`、`/login` 等）可用 Swagger 產生互動式文件。在 Node/Express 常見三種作法：
 
 | 作法 | 概念 | 取捨 |
 | --- | --- | --- |

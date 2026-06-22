@@ -8,7 +8,6 @@ import MySQLStore from 'express-mysql-session';
 import moment from 'moment-timezone';
 import { z } from 'zod';
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
 import pool from './utils/connect-mysql.js';
 import upload from './utils/upload-images.js';
 import adminRouter from './routes/admin.js';
@@ -78,17 +77,6 @@ app.use((req, res, next) => {
   res.locals.session = req.session; // 樣板可用 session.admin 判斷登入
   res.locals.query = req.query;
   res.locals.cookies = req.cookies;
-
-  // JWT 認證處理：解析 Authorization: Bearer <token>
-  const auth = req.get('Authorization');
-  if (auth && auth.indexOf('Bearer ') === 0) {
-    const token = auth.slice(7);
-    try {
-      req.my_jwt = jwt.verify(token, process.env.JWT_SECRET);
-    } catch (ex) {
-      // JWT 驗證失敗，但不阻斷請求
-    }
-  }
 
   // 將關鍵字以 <b> 標示（樣板以 <%- 原樣輸出）
   res.locals.labelBold = (originStr, labelStr) => {
@@ -322,7 +310,7 @@ app.post('/try-formats', upload.none(), (req, res) => {
   res.json(req.body);
 });
 
-// ===== 認證：登入 / 登出 / JWT =====
+// ===== 認證：登入 / 登出 =====
 
 // 登入頁面
 app.get('/login', (req, res) => {
@@ -374,42 +362,6 @@ app.get('/logout', (req, res) => {
   });
 });
 
-// 登入 API（JWT，適用跨網域 API / 行動 App）
-app.post('/login-jwt', upload.none(), async (req, res) => {
-  const { email, password } = req.body;
-
-  const zodResult = loginSchema.safeParse({ email, password });
-  if (!zodResult.success) {
-    return res.status(400).json({ success: false });
-  }
-
-  const sql = 'SELECT * FROM members WHERE email=?';
-  const [rows] = await pool.query(sql, [email]);
-
-  if (!rows.length) {
-    return res.status(404).json({ success: false, code: 12 });
-  }
-
-  if (!(await bcrypt.compare(password, rows[0].password_hash))) {
-    return res.status(404).json({ success: false, code: 34 });
-  }
-
-  // 建立 JWT Token
-  const payload = {
-    id: rows[0].member_id,
-    email,
-  };
-  const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '24h' });
-
-  res.json({
-    success: true,
-    token,
-    id: rows[0].member_id,
-    email,
-    nickname: rows[0].nickname,
-  });
-});
-
 // bcrypt 密碼加密 / 比對測試
 app.get('/bcrypt1', async (req, res) => {
   const pw = '123456';
@@ -421,15 +373,6 @@ app.get('/bcrypt2', async (req, res) => {
   const hash = '$2b$10$.tCwSbb0Hc8TP/GGzE.3H.TmXzVPu9Df7vy7QlZj4OnmIZzSTP.ci';
   const result = await bcrypt.compare(pw, hash); // 比對
   res.send({ result });
-});
-
-// JWT 產生 / 驗證測試
-app.get('/jwt01', async (req, res) => {
-  const token = jwt.sign({ name: 'shinder' }, process.env.JWT_SECRET);
-  res.send(token);
-});
-app.get('/jwt-data', (req, res) => {
-  res.json(req.my_jwt);
 });
 
 // 路由模組化：掛載 router（當成中介軟體使用，放在 404 之前）
