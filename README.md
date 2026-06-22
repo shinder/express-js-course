@@ -93,3 +93,17 @@ pnpm start   # 一般啟動
 | 十六 | Session 入庫 | `index.js`（express-mysql-session） |
 | 十七～二十一 | 通訊錄 CRUD、Zod 驗證、登入權限、JWT | `routes/address-book.js`、`views/address-book/`、`index.js` |
 | 附錄二 | CORS | `demo/cors/` |
+
+## API 文件（Swagger / OpenAPI）
+
+本專案的 JSON API（`/address-book/api/*`、`/login`、`/login-jwt`、`/jwt-data` 等）可用 Swagger 產生互動式文件。在 Node/Express 常見三種作法：
+
+| 作法 | 概念 | 取捨 |
+| --- | --- | --- |
+| **swagger-jsdoc** | 在各路由上方加 `@openapi` JSDoc 註解，再編譯成 OpenAPI 規格 | 改動最小、可漸進；本專案採用此法 |
+| 手寫 OpenAPI | 自行維護一份 `openapi.yaml` / `openapi.json` | 文件與程式碼分離，但需手動保持同步 |
+| zod-to-openapi | 由既有的 Zod schema 自動產生規格 | 單一真實來源，但路由要改成註冊式寫法 |
+
+> OpenAPI 的實際實作放在 **`feature/swagger-openapi`** 分支（使用 swagger-jsdoc）。
+> 切到該分支啟動後，可在 <http://localhost:3000/api-docs> 瀏覽 Swagger UI，原始規格在 <http://localhost:3000/openapi.json>。
+> `main` 分支僅保留本說明、不含 Swagger 相依套件。
