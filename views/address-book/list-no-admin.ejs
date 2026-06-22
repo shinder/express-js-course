@@ -28,11 +28,13 @@
           <td><%= r.birthday %></td>
           <td><%= r.address %></td>
           <td>
+            <% if(session.admin){ %>
             <span class="favorite-hearts <%= r.like_id ? 'liked' : '' %> text-danger"
                   style="cursor: pointer;" onclick="toggleLike(event)">
               <i class="fa-solid fa-heart"></i>
               <i class="fa-regular fa-heart"></i>
             </span>
+            <% } %>
           </td>
         </tr>
         <% } %>

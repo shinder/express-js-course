@@ -22,8 +22,12 @@ const abItemSchema = z.object({
     .or(z.literal("")),
 });
 
-// 取得目前登入會員的 id（尚未登入則為 0）
-const getMemberId = (req) => (req.session.admin ? +req.session.admin.member_id : 0);
+// 取得目前登入會員的 id（支援 Session 與 JWT，未登入則為 0）
+const getMemberId = (req) => {
+  if (req.session.admin?.id) return +req.session.admin.id;
+  if (req.my_jwt?.id) return +req.my_jwt.id;
+  return 0;
+};
 
 // 列表資料查詢核心函式
 const getListData = async (req) => {
@@ -205,40 +209,38 @@ router.get("/api", async (req, res) => {
   res.json(data);
 });
 
-// 切換收藏狀態
+// 切換收藏狀態（需登入，支援 Session 與 JWT）
 router.post("/api/toggle-like/:ab_id", async (req, res) => {
-  const output = { success: false, action: "", error: "" };
+  let output = {
+    success: false,
+    action: "",
+    ab_id: req.params.ab_id,
+  };
+
+  // 檢查會員是否已登入
   const member_id = getMemberId(req);
-  // 收藏功能需登入（ab_likes.member_id 對 members 有外鍵約束）
   if (!member_id) {
-    output.error = "請先登入";
-    return res.status(401).json(output);
-  }
-  const ab_id = +req.params.ab_id || 0;
-  if (!ab_id) {
-    output.error = "缺少 ab_id";
-    return res.json(output);
+    return res.status(403).json({ ...output, message: "沒有登入" });
   }
 
-  // 檢查是否已收藏
-  const [rows] = await pool.query(
-    "SELECT * FROM ab_likes WHERE member_id=? AND ab_id=?",
-    [member_id, ab_id]
-  );
+  // 執行收藏 / 取消收藏邏輯
+  const sql = "SELECT * FROM ab_likes WHERE member_id=? AND ab_id=?";
+  const [rows] = await pool.query(sql, [member_id, req.params.ab_id]);
+
   if (rows.length) {
-    await pool.query("DELETE FROM ab_likes WHERE member_id=? AND ab_id=?", [
-      member_id,
-      ab_id,
-    ]);
+    // 原本已收藏，執行移除
     output.action = "remove";
+    const sql = "DELETE FROM ab_likes WHERE like_id=?";
+    const [result] = await pool.query(sql, [rows[0].like_id]);
+    output.success = !!result.affectedRows;
   } else {
-    await pool.query("INSERT INTO ab_likes (member_id, ab_id) VALUES (?, ?)", [
-      member_id,
-      ab_id,
-    ]);
+    // 原本未收藏，執行加入
+    const sql = "INSERT INTO ab_likes (member_id, ab_id) VALUES (?,?)";
+    const [result] = await pool.query(sql, [member_id, req.params.ab_id]);
     output.action = "add";
+    output.success = !!result.affectedRows;
   }
-  output.success = true;
+
   res.json(output);
 });
 

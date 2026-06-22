@@ -1,0 +1,69 @@
+<%- include('partials/html-head') %>
+<%- include('partials/html-navbar') %>
+<div class="d-flex align-items-start justify-content-center bg-light px-3 py-5">
+  <div class="card w-100 shadow" style="max-width: 28rem;">
+    <div class="card-body">
+      <h2 class="card-title text-center fs-4 fw-bold mb-4">登入</h2>
+
+      <form name="form1" onsubmit="sendData(event)" novalidate>
+        <!-- 電子郵箱欄位 -->
+        <div class="mb-3">
+          <label class="form-label" for="email">電子郵箱</label>
+          <input
+            type="text"
+            class="form-control"
+            id="email"
+            name="email"
+            placeholder="請輸入電子郵箱"
+            required
+          />
+        </div>
+
+        <!-- 密碼欄位 -->
+        <div class="mb-4">
+          <label class="form-label" for="password">密碼</label>
+          <input
+            type="password"
+            class="form-control"
+            id="password"
+            name="password"
+            placeholder="請輸入密碼"
+            required
+          />
+        </div>
+
+        <!-- 登入按鈕 -->
+        <div class="d-grid">
+          <button type="submit" class="btn btn-primary">登入</button>
+        </div>
+      </form>
+      <p class="text-muted small mt-3 mb-0">
+        測試帳號：ming@test.com / shin@test.com / mary@test.com，密碼皆為 123456
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- 錯誤提示 Modal -->
+<div id="errorModal" class="modal fade" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title text-danger">登入失敗</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-danger mb-0">
+          <span id="errorMessage">帳號或密碼錯誤</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">確定</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/html-scripts') %>
+<script src="/js/login.js"></script>
+<%- include('partials/html-tail') %>

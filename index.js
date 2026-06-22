@@ -7,6 +7,8 @@ import session from 'express-session';
 import MySQLStore from 'express-mysql-session';
 import moment from 'moment-timezone';
 import { z } from 'zod';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 import pool from './utils/connect-mysql.js';
 import upload from './utils/upload-images.js';
 import adminRouter from './routes/admin.js';
@@ -71,6 +73,23 @@ app.use(requestLogger);
 
 // 樣板共用的 res.locals 輔助函式
 app.use((req, res, next) => {
+  // 讓所有 EJS 都能用這些變數
+  res.locals.pageName = '';
+  res.locals.session = req.session; // 樣板可用 session.admin 判斷登入
+  res.locals.query = req.query;
+  res.locals.cookies = req.cookies;
+
+  // JWT 認證處理：解析 Authorization: Bearer <token>
+  const auth = req.get('Authorization');
+  if (auth && auth.indexOf('Bearer ') === 0) {
+    const token = auth.slice(7);
+    try {
+      req.my_jwt = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (ex) {
+      // JWT 驗證失敗，但不阻斷請求
+    }
+  }
+
   // 將關鍵字以 <b> 標示（樣板以 <%- 原樣輸出）
   res.locals.labelBold = (originStr, labelStr) => {
     // 先跳脫 HTML 特殊字元，避免資料含標籤時造成 XSS
@@ -301,6 +320,116 @@ app.get('/try-formats', (req, res) => {
 // json 與 urlencoded 則由全域 middleware 解析，皆放在 req.body
 app.post('/try-formats', upload.none(), (req, res) => {
   res.json(req.body);
+});
+
+// ===== 認證：登入 / 登出 / JWT =====
+
+// 登入頁面
+app.get('/login', (req, res) => {
+  res.locals.pageName = 'login';
+  res.render('login');
+});
+
+// 登入 API（Session）
+app.post('/login', upload.none(), async (req, res) => {
+  const { email, password } = req.body;
+
+  // 1. 使用 Zod 驗證輸入資料格式
+  const zodResult = loginSchema.safeParse({ email, password });
+  if (!zodResult.success) {
+    return res.status(400).json({ success: false });
+  }
+
+  // 2. 查詢資料庫中的使用者
+  const sql = 'SELECT * FROM members WHERE email=?';
+  const [rows] = await pool.query(sql, [email]);
+
+  if (!rows.length) {
+    return res.status(404).json({ success: false, code: 12 }); // 帳號不存在
+  }
+
+  // 3. 使用 bcrypt 比對密碼
+  if (!(await bcrypt.compare(password, rows[0].password_hash))) {
+    return res.status(404).json({ success: false, code: 34 }); // 密碼錯誤
+  }
+
+  // 4. 建立 Session
+  req.session.admin = {
+    id: rows[0].member_id,
+    email,
+    nickname: rows[0].nickname,
+  };
+
+  res.json({ success: true });
+});
+
+// 登出
+app.get('/logout', (req, res) => {
+  const goBack = req.get('Referer') || '/';
+  // 刪除 session 中的 admin 物件
+  delete req.session.admin;
+  // 確保 session 變更被儲存後再跳轉
+  req.session.save(() => {
+    res.redirect(goBack);
+  });
+});
+
+// 登入 API（JWT，適用跨網域 API / 行動 App）
+app.post('/login-jwt', upload.none(), async (req, res) => {
+  const { email, password } = req.body;
+
+  const zodResult = loginSchema.safeParse({ email, password });
+  if (!zodResult.success) {
+    return res.status(400).json({ success: false });
+  }
+
+  const sql = 'SELECT * FROM members WHERE email=?';
+  const [rows] = await pool.query(sql, [email]);
+
+  if (!rows.length) {
+    return res.status(404).json({ success: false, code: 12 });
+  }
+
+  if (!(await bcrypt.compare(password, rows[0].password_hash))) {
+    return res.status(404).json({ success: false, code: 34 });
+  }
+
+  // 建立 JWT Token
+  const payload = {
+    id: rows[0].member_id,
+    email,
+  };
+  const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '24h' });
+
+  res.json({
+    success: true,
+    token,
+    id: rows[0].member_id,
+    email,
+    nickname: rows[0].nickname,
+  });
+});
+
+// bcrypt 密碼加密 / 比對測試
+app.get('/bcrypt1', async (req, res) => {
+  const pw = '123456';
+  const hash = await bcrypt.hash(pw, 10); // 取得 hash
+  res.send(hash);
+});
+app.get('/bcrypt2', async (req, res) => {
+  const pw = '123456';
+  const hash = '$2b$10$.tCwSbb0Hc8TP/GGzE.3H.TmXzVPu9Df7vy7QlZj4OnmIZzSTP.ci';
+  const result = await bcrypt.compare(pw, hash); // 比對
+  res.send({ result });
+});
+
+// JWT 產生 / 驗證測試
+app.get('/jwt01', async (req, res) => {
+  const token = jwt.sign({ name: 'shinder' }, process.env.JWT_SECRET);
+  res.send(token);
+});
+app.get('/jwt-data', (req, res) => {
+  res.json(req.my_jwt);
 });
 
 // 路由模組化：掛載 router（當成中介軟體使用，放在 404 之前）

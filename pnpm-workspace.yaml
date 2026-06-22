@@ -1,0 +1,3 @@
+# 允許 bcrypt（原生模組）執行安裝後的建置腳本
+allowBuilds:
+  bcrypt: true
