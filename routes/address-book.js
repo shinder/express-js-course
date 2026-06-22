@@ -1,9 +1,26 @@
 // routes/address-book.js - 通訊錄列表與相關 API
 import express from "express";
 import moment from "moment-timezone";
+import { z } from "zod";
 import pool from "../utils/connect-mysql.js";
+import upload from "../utils/upload-images.js";
 
 const router = express.Router();
+
+// 資料驗證結構（Zod）
+const abItemSchema = z.object({
+  name: z
+    .string({ message: "姓名為必填欄位" })
+    .min(2, { message: "姓名至少兩個字" }),
+  email: z
+    .string({ message: "電郵為必填欄位" })
+    .email({ message: "格式必須為電郵格式" }),
+  birthday: z
+    .string()
+    .date("日期格式: YYYY-MM-DD")
+    .optional()
+    .or(z.literal("")),
+});
 
 // 取得目前登入會員的 id（尚未登入則為 0）
 const getMemberId = (req) => (req.session.admin ? +req.session.admin.member_id : 0);
@@ -155,6 +172,13 @@ router.get("/", async (req, res) => {
   }
 });
 
+// 新增表單頁面
+router.get("/add", async (req, res) => {
+  res.locals.pageTitle = "新增通訊錄";
+  res.locals.pageName = "ab-add";
+  res.render("address-book/add");
+});
+
 // 列表資料 API
 router.get("/api", async (req, res) => {
   const data = await getListData(req);
@@ -195,6 +219,57 @@ router.post("/api/toggle-like/:ab_id", async (req, res) => {
     output.action = "add";
   }
   output.success = true;
+  res.json(output);
+});
+
+// 新增資料 API
+router.post("/api", upload.none(), async (req, res) => {
+  const output = {
+    success: false,
+    bodyData: req.body,
+    insertId: 0,
+    issues: [],
+  };
+
+  let { name, email, mobile, birthday, address } = req.body;
+
+  // 資料驗證
+  const zodResult = abItemSchema.safeParse({
+    name,
+    email,
+    mobile,
+    birthday,
+    address,
+  });
+
+  if (!zodResult.success) {
+    if (zodResult.error?.issues?.length) {
+      output.issues = zodResult.error.issues;
+    }
+    return res.status(400).json(output);
+  }
+
+  // 處理空值的生日欄位
+  if (!birthday) {
+    birthday = null;
+  }
+
+  const sql = "INSERT INTO `address_book` SET ?";
+
+  try {
+    const [result] = await pool.query(sql, [
+      { name, email, mobile, birthday, address },
+    ]);
+    output.success = !!result.affectedRows;
+    if (output.success) {
+      res.status(201);
+      output.insertId = result.insertId;
+    }
+  } catch (ex) {
+    console.log(ex);
+    res.status(400);
+  }
+
   res.json(output);
 });
 

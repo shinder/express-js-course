@@ -1,0 +1,84 @@
+<%- include('../partials/html-head') %>
+<%- include('../partials/html-navbar') %>
+<div class="d-flex align-items-start justify-content-center bg-light px-3 py-5">
+  <div class="card w-100 shadow" style="max-width: 32rem;">
+    <div class="card-body">
+      <h2 class="card-title text-center fs-4 fw-bold mb-4">新增通訊錄</h2>
+      <form name="form1" onsubmit="sendData(event)" novalidate>
+        <!-- 姓名欄位 -->
+        <div class="mb-3">
+          <label class="form-label" for="name">姓名</label>
+          <input
+            type="text"
+            class="form-control"
+            id="name"
+            name="name"
+            placeholder="請輸入姓名"
+            required
+          />
+          <div class="invalid-feedback"></div>
+        </div>
+
+        <!-- 電子郵箱欄位 -->
+        <div class="mb-3">
+          <label class="form-label" for="email">電子郵箱</label>
+          <input
+            type="email"
+            class="form-control"
+            id="email"
+            name="email"
+            placeholder="請輸入電子郵箱"
+            required
+          />
+          <div class="invalid-feedback"></div>
+        </div>
+
+        <!-- 手機欄位 -->
+        <div class="mb-3">
+          <label class="form-label" for="mobile">手機</label>
+          <input
+            type="tel"
+            class="form-control"
+            id="mobile"
+            name="mobile"
+            placeholder="請輸入手機號碼"
+          />
+          <div class="invalid-feedback"></div>
+        </div>
+
+        <!-- 生日欄位 -->
+        <div class="mb-3">
+          <label class="form-label" for="birthday">生日</label>
+          <input
+            type="date"
+            class="form-control"
+            id="birthday"
+            name="birthday"
+          />
+          <div class="invalid-feedback"></div>
+        </div>
+
+        <!-- 地址欄位 -->
+        <div class="mb-4">
+          <label class="form-label" for="address">地址</label>
+          <textarea
+            class="form-control"
+            id="address"
+            name="address"
+            placeholder="請輸入地址"
+            rows="3"
+          ></textarea>
+        </div>
+
+        <!-- 提交按鈕 -->
+        <div class="d-grid">
+          <button type="submit" class="btn btn-primary">新增</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/html-scripts') %>
+<script src="/js/ab-add.js"></script>
+<%- include('../partials/html-tail') %>
