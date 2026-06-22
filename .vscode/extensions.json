@@ -1,0 +1,23 @@
+{
+  // 開啟此專案時，VSCode 會建議安裝以下外掛（JS / Node.js / Express / EJS 常用）
+  "recommendations": [
+    // JavaScript / 程式碼品質與格式化
+    "dbaeumer.vscode-eslint", // ESLint：JS 程式碼檢查
+    "esbenp.prettier-vscode", // Prettier：程式碼格式化
+    "editorconfig.editorconfig", // EditorConfig：統一縮排與換行設定
+    "xabikos.javascriptsnippets", // JavaScript (ES6) 程式碼片段
+
+    // Node.js：模組與路徑自動完成、環境變數
+    "christian-kohler.npm-intellisense", // 匯入時自動完成 npm 模組名稱
+    "christian-kohler.path-intellisense", // 檔案路徑自動完成
+    "mikestead.dotenv", // .env 環境變數檔語法標色
+
+    // Express / EJS 樣板與 API 測試
+    "digitalbrainstem.javascript-ejs-support", // EJS 樣板語言支援
+    "formulahendry.auto-rename-tag", // EJS/HTML 標籤成對重新命名
+    "humao.rest-client", // REST Client：以 .rest 檔測試 API
+
+    // 輔助
+    "streetsidesoftware.code-spell-checker" // 英文拼字檢查
+  ]
+}
