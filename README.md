@@ -104,6 +104,6 @@ pnpm start   # 一般啟動
 | 手寫 OpenAPI | 自行維護一份 `openapi.yaml` / `openapi.json` | 文件與程式碼分離，但需手動保持同步 |
 | zod-to-openapi | 由既有的 Zod schema 自動產生規格 | 單一真實來源，但路由要改成註冊式寫法 |
 
-> OpenAPI 的實際實作放在 **`feature/swagger-openapi`** 分支（使用 swagger-jsdoc）。
-> 切到該分支啟動後，可在 <http://localhost:3000/api-docs> 瀏覽 Swagger UI，原始規格在 <http://localhost:3000/openapi.json>。
-> `main` 分支僅保留本說明、不含 Swagger 相依套件。
+> **本分支（`feature/swagger-openapi`）已使用 swagger-jsdoc 實作 OpenAPI 文件。**
+> 啟動後可在 <http://localhost:3000/api-docs> 瀏覽 Swagger UI，原始規格在 <http://localhost:3000/openapi.json>。
+> 文件來源是各路由上方的 `@openapi` JSDoc 註解，由 `utils/swagger.js` 編譯；`main` 分支則僅保留說明、不含 Swagger 相依套件。

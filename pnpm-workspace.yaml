@@ -1,3 +1,4 @@
-# 允許 bcrypt（原生模組）執行安裝後的建置腳本
+# 控制安裝後是否執行套件的建置腳本
 allowBuilds:
-  bcrypt: true
+  bcrypt: true # 原生模組，需要建置
+  '@scarf/scarf': false # 純 telemetry，不執行

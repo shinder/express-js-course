@@ -204,12 +204,55 @@ router.get("/edit/:ab_id", async (req, res) => {
 });
 
 // 列表資料 API
+/**
+ * @openapi
+ * /address-book/api:
+ *   get:
+ *     tags: [通訊錄]
+ *     summary: 取得通訊錄列表（搜尋、分頁、排序）
+ *     parameters:
+ *       - { in: query, name: page, schema: { type: integer, default: 1 } }
+ *       - { in: query, name: keyword, schema: { type: string }, description: 姓名或手機關鍵字 }
+ *       - { in: query, name: birth_begin, schema: { type: string, format: date } }
+ *       - { in: query, name: birth_end, schema: { type: string, format: date } }
+ *       - { in: query, name: orderby, schema: { type: string, enum: [id_asc, id_desc, birth_asc, birth_desc, mobile_asc, mobile_desc] } }
+ *     responses:
+ *       200:
+ *         description: 列表資料
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/ListResult' }
+ */
 router.get("/api", async (req, res) => {
   const data = await getListData(req);
   res.json(data);
 });
 
 // 切換收藏狀態（需登入，支援 Session 與 JWT）
+/**
+ * @openapi
+ * /address-book/api/toggle-like/{ab_id}:
+ *   post:
+ *     tags: [通訊錄]
+ *     summary: 切換收藏狀態（需登入）
+ *     security:
+ *       - cookieAuth: []
+ *       - bearerAuth: []
+ *     parameters:
+ *       - { in: path, name: ab_id, required: true, schema: { type: integer } }
+ *     responses:
+ *       200:
+ *         description: 切換結果
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean }
+ *                 action: { type: string, enum: [add, remove] }
+ *                 ab_id: { type: string }
+ *       403: { description: 沒有登入 }
+ */
 router.post("/api/toggle-like/:ab_id", async (req, res) => {
   let output = {
     success: false,
@@ -245,6 +288,37 @@ router.post("/api/toggle-like/:ab_id", async (req, res) => {
 });
 
 // 新增資料 API
+/**
+ * @openapi
+ * /address-book/api:
+ *   post:
+ *     tags: [通訊錄]
+ *     summary: 新增聯絡人
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/x-www-form-urlencoded:
+ *           schema:
+ *             type: object
+ *             required: [name, email]
+ *             properties:
+ *               name: { type: string, example: 王小明 }
+ *               email: { type: string, format: email, example: ming@example.com }
+ *               mobile: { type: string, example: "0912345678" }
+ *               birthday: { type: string, format: date, example: "1995-10-02" }
+ *               address: { type: string, example: 台北市 }
+ *     responses:
+ *       201: { description: 新增成功 }
+ *       400:
+ *         description: 驗證失敗，回傳 issues
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean, example: false }
+ *                 issues: { type: array, items: { $ref: '#/components/schemas/ZodIssue' } }
+ */
 router.post("/api", upload.none(), async (req, res) => {
   const output = {
     success: false,
@@ -296,6 +370,32 @@ router.post("/api", upload.none(), async (req, res) => {
 });
 
 // 修改資料
+/**
+ * @openapi
+ * /address-book/api/{ab_id}:
+ *   put:
+ *     tags: [通訊錄]
+ *     summary: 修改聯絡人
+ *     parameters:
+ *       - { in: path, name: ab_id, required: true, schema: { type: integer } }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/x-www-form-urlencoded:
+ *           schema:
+ *             type: object
+ *             required: [name, email]
+ *             properties:
+ *               name: { type: string }
+ *               email: { type: string, format: email }
+ *               mobile: { type: string }
+ *               birthday: { type: string, format: date }
+ *               address: { type: string }
+ *     responses:
+ *       200: { description: 修改成功（有變更） }
+ *       400: { description: 驗證失敗或無變更 }
+ *       404: { description: 找不到資料 }
+ */
 router.put("/api/:ab_id", upload.none(), async (req, res) => {
   const output = {
     success: false,
@@ -356,6 +456,27 @@ router.put("/api/:ab_id", upload.none(), async (req, res) => {
 });
 
 // 批次刪除（須定義在 /api/:ab_id 之前，否則 del_many 會被當成 ab_id）
+/**
+ * @openapi
+ * /address-book/api/del_many:
+ *   delete:
+ *     tags: [通訊錄]
+ *     summary: 批次刪除聯絡人
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/x-www-form-urlencoded:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               i:
+ *                 type: array
+ *                 items: { type: integer }
+ *                 description: 要刪除的 ab_id 陣列（送出時欄位名為 i[]）
+ *     responses:
+ *       200: { description: 刪除結果（含 affectedRows） }
+ *       400: { description: 未提供要刪除的項目 }
+ */
 router.delete("/api/del_many", upload.none(), async (req, res) => {
   const output = {
     success: false,
@@ -380,6 +501,18 @@ router.delete("/api/del_many", upload.none(), async (req, res) => {
 });
 
 // 刪除單筆資料
+/**
+ * @openapi
+ * /address-book/api/{ab_id}:
+ *   delete:
+ *     tags: [通訊錄]
+ *     summary: 刪除單筆聯絡人
+ *     parameters:
+ *       - { in: path, name: ab_id, required: true, schema: { type: integer } }
+ *     responses:
+ *       200: { description: 刪除結果 }
+ *       404: { description: 找不到資料 }
+ */
 router.delete("/api/:ab_id", async (req, res) => {
   const ori = await getItemData(req); // 取得未修改前的資料
 
@@ -394,6 +527,28 @@ router.delete("/api/:ab_id", async (req, res) => {
 });
 
 // 單筆資料 API
+/**
+ * @openapi
+ * /address-book/api/{ab_id}:
+ *   get:
+ *     tags: [通訊錄]
+ *     summary: 取得單筆聯絡人
+ *     parameters:
+ *       - { in: path, name: ab_id, required: true, schema: { type: integer } }
+ *     responses:
+ *       200:
+ *         description: 單筆資料
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean }
+ *                 code: { type: integer }
+ *                 data: { $ref: '#/components/schemas/AddressBookItem' }
+ *       400: { description: 錯誤的編號 }
+ *       404: { description: 沒有該筆資料 }
+ */
 router.get("/api/:ab_id", async (req, res) => {
   const item = await getItemData(req);
   res.status(item.code).json(item);

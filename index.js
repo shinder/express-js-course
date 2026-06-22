@@ -11,9 +11,11 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import pool from './utils/connect-mysql.js';
 import upload from './utils/upload-images.js';
+import swaggerUi from 'swagger-ui-express';
 import adminRouter from './routes/admin.js';
 import memberRouter from './routes/member.js';
 import addressBookRouter from './routes/address-book.js';
+import swaggerSpec from './utils/swagger.js';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -330,6 +332,27 @@ app.get('/login', (req, res) => {
   res.render('login');
 });
 
+/**
+ * @openapi
+ * /login:
+ *   post:
+ *     tags: [認證]
+ *     summary: 會員登入（建立 Session Cookie）
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/x-www-form-urlencoded:
+ *           schema:
+ *             type: object
+ *             required: [email, password]
+ *             properties:
+ *               email: { type: string, format: email, example: ming@test.com }
+ *               password: { type: string, format: password, example: "123456" }
+ *     responses:
+ *       200: { description: 登入成功，已建立 session }
+ *       400: { description: 欄位格式不符（Zod 驗證失敗） }
+ *       404: { description: 帳號不存在（code 12）或密碼錯誤（code 34） }
+ */
 // 登入 API（Session）
 app.post('/login', upload.none(), async (req, res) => {
   const { email, password } = req.body;
@@ -363,6 +386,15 @@ app.post('/login', upload.none(), async (req, res) => {
   res.json({ success: true });
 });
 
+/**
+ * @openapi
+ * /logout:
+ *   get:
+ *     tags: [認證]
+ *     summary: 登出（清除 session 後轉導）
+ *     responses:
+ *       302: { description: 轉導回原頁面或首頁 }
+ */
 // 登出
 app.get('/logout', (req, res) => {
   const goBack = req.get('Referer') || '/';
@@ -374,6 +406,38 @@ app.get('/logout', (req, res) => {
   });
 });
 
+/**
+ * @openapi
+ * /login-jwt:
+ *   post:
+ *     tags: [認證]
+ *     summary: 會員登入（取得 JWT Token）
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/x-www-form-urlencoded:
+ *           schema:
+ *             type: object
+ *             required: [email, password]
+ *             properties:
+ *               email: { type: string, format: email, example: shin@test.com }
+ *               password: { type: string, format: password, example: "123456" }
+ *     responses:
+ *       200:
+ *         description: 登入成功，回傳 JWT token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean }
+ *                 token: { type: string }
+ *                 id: { type: integer }
+ *                 email: { type: string }
+ *                 nickname: { type: string }
+ *       400: { description: 欄位格式不符 }
+ *       404: { description: 帳號或密碼錯誤 }
+ */
 // 登入 API（JWT，適用跨網域 API / 行動 App）
 app.post('/login-jwt', upload.none(), async (req, res) => {
   const { email, password } = req.body;
@@ -428,6 +492,17 @@ app.get('/jwt01', async (req, res) => {
   const token = jwt.sign({ name: 'shinder' }, process.env.JWT_SECRET);
   res.send(token);
 });
+/**
+ * @openapi
+ * /jwt-data:
+ *   get:
+ *     tags: [認證]
+ *     summary: 取得目前 JWT 的內容（payload）
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200: { description: 回傳 JWT payload；未帶有效 token 時為空 }
+ */
 app.get('/jwt-data', (req, res) => {
   res.json(req.my_jwt);
 });
@@ -437,6 +512,10 @@ app.use(adminRouter); // 無前綴：/admin/123
 app.use('/v1', adminRouter); // 有前綴：/v1/admin/123，req.baseUrl = /v1
 app.use(memberRouter); // router.route() 寫法：/member/edit/:id
 app.use('/address-book', addressBookRouter); // 通訊錄
+
+// API 文件：Swagger UI 與原始 OpenAPI 規格
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.get('/openapi.json', (req, res) => res.json(swaggerSpec));
 
 // 設定靜態檔案服務（放在其他路由之後、404 之前）
 app.use(express.static('public'));
