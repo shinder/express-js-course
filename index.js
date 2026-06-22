@@ -4,6 +4,7 @@ import 'dotenv/config'; // 載入環境變數檔內容到 process.env
 import multer from 'multer';
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
+import moment from 'moment-timezone';
 import upload from './utils/upload-images.js';
 import adminRouter from './routes/admin.js';
 import memberRouter from './routes/member.js';
@@ -169,6 +170,26 @@ app.get(['/params-2', '/params-2/:action', '/params-2/:action/:id'], (req, res) 
 // 路徑中固定段與參數可混用
 app.get('/users/:userId/profile', (req, res) => {
   res.json(req.params);
+});
+
+// 時間格式：使用 Moment.js（含時區）
+app.get('/try-moment', (req, res) => {
+  const fm = 'YYYY-MM-DD HH:mm:ss';
+  const m1 = moment(); // 當下時間
+  const m2 = moment('2024-02-29'); // 2024 是閏年，合法
+  const m3 = moment('2025-02-29'); // 2025 不是閏年，無效
+
+  res.json({
+    m1: m1.format(fm),
+    m2: m2.format(fm),
+    m3: m3.format(fm),
+    m1v: m1.isValid(),
+    m2v: m2.isValid(),
+    m3v: m3.isValid(),
+    // 將時間轉換到指定時區再格式化
+    m1z: m1.tz('Europe/London').format(fm),
+    m2z: m2.tz('Europe/London').format(fm),
+  });
 });
 
 // Cookie：設定 cookie
