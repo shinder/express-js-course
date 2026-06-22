@@ -1,0 +1,7 @@
+# 不交給 Prettier 格式化的檔案
+node_modules
+pnpm-lock.yaml
+db
+docs
+public/images
+.playwright-mcp

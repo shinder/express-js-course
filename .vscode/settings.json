@@ -11,5 +11,18 @@
     "statusBar.debuggingForeground": "#F3FBFE",
     "statusBar.noFolderBackground": "#053241",
     "statusBar.noFolderForeground": "#F3FBFE"
+  },
+
+  // 存檔時以 Prettier 自動格式化
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  // EJS 樣板 Prettier 無法解析，關閉存檔格式化避免報錯
+  "[ejs]": {
+    "editor.formatOnSave": false
+  },
+
+  // 在 EJS 樣板中啟用 Emmet（輸入 div.row 之類即可展開）
+  "emmet.includeLanguages": {
+    "ejs": "html"
   }
 }
