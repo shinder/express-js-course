@@ -3,3 +3,8 @@ node_modules/
 .env
 *.log
 .DS_Store
+
+# 使用者上傳的檔案（保留資料夾，不追蹤內容）
+uploads/
+public/images/*
+!public/images/.gitkeep

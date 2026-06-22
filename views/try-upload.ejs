@@ -1,0 +1,16 @@
+<%- include('partials/html-head') %>
+<%- include('partials/html-navbar') %>
+<div class="container mt-4">
+  <h1>try-upload</h1>
+  <form action="/try-upload" method="post" enctype="multipart/form-data">
+    <div class="mb-3">
+      <input type="file" name="avatar" class="form-control" />
+    </div>
+    <div class="mb-3">
+      <input type="text" name="username" class="form-control" placeholder="使用者名稱" />
+    </div>
+    <button type="submit" class="btn btn-primary">上傳</button>
+  </form>
+</div>
+<%- include('partials/html-scripts') %>
+<%- include('partials/html-tail') %>
