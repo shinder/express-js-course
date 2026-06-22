@@ -1,0 +1,63 @@
+<%- include('partials/html-head') %>
+<%- include('partials/html-navbar') %>
+<div class="container mt-4">
+  <h1>前端發送表單資料的三種格式</h1>
+  <p class="text-muted">填好表單後，分別用三種 Content-Type 送到後端 /try-formats，觀察伺服器收到的 req.body。</p>
+
+  <form name="form1" onsubmit="return false;">
+    <div class="mb-3">
+      <label class="form-label">帳號</label>
+      <input type="text" class="form-control" name="account" value="shinder" />
+    </div>
+    <div class="mb-3">
+      <label class="form-label">密碼</label>
+      <input type="text" class="form-control" name="password" value="123456" />
+    </div>
+    <button type="button" class="btn btn-primary" id="btn-multipart">multipart/form-data</button>
+    <button type="button" class="btn btn-success" id="btn-urlencoded">x-www-form-urlencoded</button>
+    <button type="button" class="btn btn-warning" id="btn-json">application/json</button>
+  </form>
+
+  <h5 class="mt-4">伺服器回應：</h5>
+  <pre id="output" class="bg-light p-3 border rounded"></pre>
+</div>
+
+<script>
+  const output = document.querySelector('#output');
+  const show = (label, data) =>
+    (output.textContent = label + '\n' + JSON.stringify(data, null, 2));
+
+  // 1. multipart/form-data：直接把 FormData 當 body，瀏覽器會自動設定 Content-Type 與 boundary
+  document.querySelector('#btn-multipart').addEventListener('click', async () => {
+    const fd = new FormData(document.form1);
+    const r = await fetch('/try-formats', { method: 'POST', body: fd });
+    show('multipart/form-data', await r.json());
+  });
+
+  // 2. application/x-www-form-urlencoded（傳統表單格式）
+  document.querySelector('#btn-urlencoded').addEventListener('click', async () => {
+    const fd = new FormData(document.form1);
+    const usp = new URLSearchParams(fd);
+    const r = await fetch('/try-formats', {
+      method: 'POST',
+      body: usp.toString(),
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    });
+    show('x-www-form-urlencoded', await r.json());
+  });
+
+  // 3. application/json（API 最常用）
+  document.querySelector('#btn-json').addEventListener('click', async () => {
+    const fd = new FormData(document.form1);
+    const dataObj = Object.fromEntries(fd.entries());
+    const r = await fetch('/try-formats', {
+      method: 'POST',
+      body: JSON.stringify(dataObj),
+      headers: { 'Content-Type': 'application/json' },
+    });
+    show('application/json', await r.json());
+  });
+</script>
+
+<%- include('partials/html-scripts') %>
+<%- include('partials/html-tail') %>

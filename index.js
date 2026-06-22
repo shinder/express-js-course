@@ -153,6 +153,16 @@ app.get('/users/:userId/profile', (req, res) => {
   res.json(req.params);
 });
 
+// 前端發送表單資料的三種格式：用同一端點接收
+app.get('/try-formats', (req, res) => {
+  res.render('try-formats');
+});
+// upload.none() 解析「純文字欄位」的 multipart/form-data；
+// json 與 urlencoded 則由全域 middleware 解析，皆放在 req.body
+app.post('/try-formats', upload.none(), (req, res) => {
+  res.json(req.body);
+});
+
 // 路由模組化：掛載 router（當成中介軟體使用，放在 404 之前）
 app.use(adminRouter); // 無前綴：/admin/123
 app.use('/v1', adminRouter); // 有前綴：/v1/admin/123，req.baseUrl = /v1
