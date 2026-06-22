@@ -1,0 +1,70 @@
+<%- include('../partials/html-head') %>
+<%- include('../partials/html-navbar') %>
+<div class="container mt-3">
+  <h1>通訊錄列表（管理員）</h1>
+
+  <%- include('_search-form') %>
+
+  <div class="table-responsive mt-3">
+    <table class="table table-striped table-bordered">
+      <thead class="table-secondary">
+        <tr>
+          <th class="text-center">
+            <input class="toggle-all" type="checkbox" onclick="toggleAll(event)" />
+            全選 <br />
+            <button class="btn btn-danger btn-sm" onclick="deleteSelected(event)">
+              刪除所選
+            </button>
+          </th>
+          <th><i class="fa-solid fa-trash"></i></th>
+          <th>編號</th>
+          <th>姓名</th>
+          <th>手機</th>
+          <th>電郵</th>
+          <th>生日</th>
+          <th>地址</th>
+          <th><i class="fa-solid fa-pen-to-square"></i></th>
+          <th><i class="fa-solid fa-heart"></i></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% for(let r of rows){ %>
+        <tr data-ab_id="<%= r.ab_id %>">
+          <td class="text-center">
+            <input class="del_item" type="checkbox" />
+          </td>
+          <td>
+            <a href="#" onclick="deleteItem(event, <%= r.ab_id %>)">
+              <i class="fa-solid fa-trash"></i>
+            </a>
+          </td>
+          <td><%= r.ab_id %></td>
+          <td><%- labelBold(r.name, query.keyword) %></td>
+          <td><%- labelBold(r.mobile, query.keyword) %></td>
+          <td><%= r.email %></td>
+          <td><%= r.birthday %></td>
+          <td><%= r.address %></td>
+          <td>
+            <a href="/address-book/edit/<%= r.ab_id %>">
+              <i class="fa-solid fa-pen-to-square"></i>
+            </a>
+          </td>
+          <td>
+            <span class="favorite-hearts <%= r.like_id ? 'liked' : '' %> text-danger"
+                  style="cursor: pointer;" onclick="toggleLike(event)">
+              <i class="fa-solid fa-heart"></i>
+              <i class="fa-regular fa-heart"></i>
+            </span>
+          </td>
+        </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+
+  <%- include('_pagination') %>
+</div>
+
+<%- include('../partials/html-scripts') %>
+<script src="/js/ab-list.js"></script>
+<%- include('../partials/html-tail') %>

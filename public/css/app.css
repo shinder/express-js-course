@@ -2,3 +2,26 @@
 body {
   padding-bottom: 3rem;
 }
+
+/* 搜尋關鍵字標示 */
+b {
+  color: red;
+  font-weight: 900;
+}
+
+/* 收藏愛心：未收藏顯示空心，收藏後顯示實心 */
+.favorite-hearts .fa-solid {
+  display: none;
+}
+
+.favorite-hearts .fa-regular {
+  display: inline-block;
+}
+
+.favorite-hearts.liked .fa-solid {
+  display: inline-block;
+}
+
+.favorite-hearts.liked .fa-regular {
+  display: none;
+}

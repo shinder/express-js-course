@@ -10,6 +10,7 @@ import pool from './utils/connect-mysql.js';
 import upload from './utils/upload-images.js';
 import adminRouter from './routes/admin.js';
 import memberRouter from './routes/member.js';
+import addressBookRouter from './routes/address-book.js';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -59,6 +60,36 @@ const requestLogger = (req, res, next) => {
   next();
 };
 app.use(requestLogger);
+
+// 樣板共用的 res.locals 輔助函式
+app.use((req, res, next) => {
+  // 將關鍵字以 <b> 標示（樣板以 <%- 原樣輸出）
+  res.locals.labelBold = (originStr, labelStr) => {
+    // 先跳脫 HTML 特殊字元，避免資料含標籤時造成 XSS
+    const escapeHtml = (s) =>
+      String(s).replace(
+        /[&<>"']/g,
+        (c) =>
+          ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])
+      );
+    const safe = escapeHtml(originStr ?? '');
+    if (!originStr || !labelStr) return safe;
+    // 跳脫關鍵字的正規表達式特殊字元，再於「已跳脫」的字串上標示
+    const labelEsc = escapeHtml(labelStr).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return safe.replace(new RegExp(`(${labelEsc})`, 'gi'), '<b>$1</b>');
+  };
+
+  // 將物件轉成 urlencoded 查詢字串（給分頁連結用），略過空值
+  res.locals.objToUrlencoded = (obj) => {
+    const usp = new URLSearchParams();
+    for (const [k, v] of Object.entries(obj)) {
+      if (v !== undefined && v !== null && v !== '') usp.set(k, v);
+    }
+    return usp.toString();
+  };
+
+  next();
+});
 
 // 基本路由
 app.get('/', (req, res) => {
@@ -268,6 +299,7 @@ app.post('/try-formats', upload.none(), (req, res) => {
 app.use(adminRouter); // 無前綴：/admin/123
 app.use('/v1', adminRouter); // 有前綴：/v1/admin/123，req.baseUrl = /v1
 app.use(memberRouter); // router.route() 寫法：/member/edit/:id
+app.use('/address-book', addressBookRouter); // 通訊錄
 
 // 設定靜態檔案服務（放在其他路由之後、404 之前）
 app.use(express.static('public'));
