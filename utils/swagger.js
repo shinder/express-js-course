@@ -7,18 +7,15 @@ const options = {
     info: {
       title: '通訊錄 API',
       version: '1.0.0',
-      description:
-        'Express 教學專案的 JSON API 文件。支援 Session（Cookie）與 JWT（Bearer Token）兩種認證。',
+      description: 'Express 教學專案的 JSON API 文件。使用 Session（Cookie）認證。',
     },
     servers: [{ url: 'http://localhost:3000', description: '本機開發伺服器' }],
     tags: [
-      { name: '認證', description: '登入、登出、JWT' },
+      { name: '認證', description: '登入、登出' },
       { name: '通訊錄', description: '通訊錄 CRUD 與收藏' },
     ],
     components: {
       securitySchemes: {
-        // JWT：在 Authorization 標頭帶 Bearer <token>
-        bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
         // Session：登入後由 express-session 發出的 cookie
         cookieAuth: { type: 'apiKey', in: 'cookie', name: 'connect.sid' },
       },

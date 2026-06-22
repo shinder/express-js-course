@@ -96,7 +96,7 @@ pnpm start   # 一般啟動
 
 ## API 文件（Swagger / OpenAPI）
 
-本專案的 JSON API（`/address-book/api/*`、`/login`、`/login-jwt`、`/jwt-data` 等）可用 Swagger 產生互動式文件。在 Node/Express 常見三種作法：
+本專案的 JSON API（`/address-book/api/*`、`/login` 等）可用 Swagger 產生互動式文件。在 Node/Express 常見三種作法：
 
 | 作法 | 概念 | 取捨 |
 | --- | --- | --- |
