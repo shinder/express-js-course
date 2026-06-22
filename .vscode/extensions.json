@@ -18,6 +18,7 @@
     "humao.rest-client", // REST Client：以 .rest 檔測試 API
 
     // 輔助
-    "streetsidesoftware.code-spell-checker" // 英文拼字檢查
+    "streetsidesoftware.code-spell-checker", // 英文拼字檢查
+    "stuart.unique-window-colors" // Window Colors：每個視窗自動上色，方便區分專案
   ]
 }
